@@ -1,0 +1,608 @@
+module {
+    @name:      "Objects"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+private import "../types/atomic_types.mr"
+private import "../types/conversions.mr"
+private import "../types/operations.mr"
+private import "../constants/units.mr"
+private import "../actions/actions.mr"
+
+units units()
+
+// Channels
+public node engine_channel => __engine_sim__engine_channel { /* void */ }
+public node crankshaft_channel => __engine_sim__crankshaft_channel { /* void */ }
+public node rod_journal_channel => __engine_sim__rod_journal { /* void */ }
+public node connecting_rod_channel => __engine_sim__connecting_rod_channel { /* void */ }
+public node piston_channel => __engine_sim__piston_channel { /* void */ }
+public node cylinder_bank_channel => __engine_sim__cylinder_bank_channel { /* void */ }
+public node function_channel => __engine_sim__function_channel { /* void */ }
+public node cylinder_head_channel => __engine_sim__cylinder_head_channel { /* void */ }
+public node camshaft_channel => __engine_sim__camshaft_channel { /* void */ }
+public node intake_channel => __engine_sim__intake_channel { /* void */ }
+public node exhaust_system_channel => __engine_sim__exhaust_system_channel { /* void */ }
+public node ignition_module_channel => __engine_sim__ignition_module_channel { /* void */ }
+public node ignition_wire_channel => __engine_sim__ignition_wire_channel { /* void */ }
+public node fuel_channel => __engine_sim__fuel_channel { /* void */ }
+public node impulse_response_channel => __engine_sim__impulse_response_channel { /* void */ }
+public node valvetrain_channel => __engine_sim__valvetrain_channel { /* void */ }
+public node vehicle_channel => __engine_sim__vehicle_channel { /* void */ }
+public node transmission_channel => __engine_sim__transmission_channel { /* void */ }
+public node throttle_channel => __engine_sim__throttle_channel { /* void */ }
+
+private node turbulence_to_flame_speed_ratio_default {
+    alias output __out:
+        function(5.0)
+            .add_sample(0.0, 3.0)
+            .add_sample(5.0, 1.5 * 5.0)
+            .add_sample(10.0, 1.5 * 10.0)
+            .add_sample(15.0, 1.5 * 15.0)
+            .add_sample(20.0, 1.5 * 20.0)
+            .add_sample(25.0, 1.5 * 25.0)
+            .add_sample(30.0, 1.5 * 30.0)
+            .add_sample(35.0, 1.5 * 35.0)
+            .add_sample(40.0, 1.5 * 40.0)
+            .add_sample(45.0, 1.5 * 45.0);
+}
+
+public node fuel => __engine_sim__fuel {
+    input name [string]: "Gasoline [Default]";
+    input molecular_mass [float]: 100 * units.g;
+    input energy_density [float]: 48.1 * units.kJ / units.g;
+    input density [float]: 0.755 * units.kg / units.L;
+    input molecular_afr [float]: 25 / 2.0;
+    input turbulence_to_flame_speed_ratio [function]:
+        turbulence_to_flame_speed_ratio_default();
+    input max_burning_efficiency [float]: 0.8;
+    input burning_efficiency_randomness [float]: 0.5;
+    input low_efficiency_attenuation [float]: 0.6;
+    input max_turbulence_effect [float]: 2.0;
+    input max_dilution_effect [float]: 10.0;
+    alias output __out [fuel_channel];
+}
+
+// Engine
+public node engine_parameters {
+    input name: "";
+    input redline: 6000 * units.rpm;
+    input starter_speed: 200 * units.rpm;
+    input starter_torque: 200 * units.lb_ft;
+    input fuel: fuel();
+}
+
+private node _engine => __engine_sim__engine {
+    input name [string];
+    
+    input redline [float];
+    input starter_speed [float];
+    input starter_torque [float];
+
+    input fuel [fuel];
+    input throttle [throttle_channel];
+
+    input simulation_frequency [float];
+    input hf_gain [float];
+    input jitter [float];
+    input noise [float];
+
+    alias output __out [engine_channel];
+}
+
+public node engine {
+    input params: engine_parameters();
+    input name: params.name;
+
+    input redline: params.redline;
+    input starter_speed: params.starter_speed;
+    input starter_torque: params.starter_torque;
+
+    input fuel: params.fuel;
+    input throttle_gamma: 1.0;
+    input throttle:
+        direct_throttle_linkage(gamma: throttle_gamma);
+
+    input simulation_frequency: 10000;
+    input hf_gain: 0.01;
+    input jitter: 0.5;
+    input noise: 1.0;
+
+    alias output __out [_engine]:
+        _engine(
+            name: name,
+
+            redline: redline,
+            starter_speed: starter_speed,
+            starter_torque: starter_torque,
+
+            fuel: fuel,
+            throttle: throttle,
+
+            simulation_frequency: simulation_frequency,
+            hf_gain: hf_gain,
+            jitter: jitter,
+            noise: noise
+        );
+}
+
+public node direct_throttle_linkage => __engine_sim__direct_throttle_linkage {
+    input gamma [float]: 1.0;
+    alias output __out [throttle_channel];
+}
+
+public node governor => __engine_sim__governor {
+    input min_speed [float]: 1.0;
+    input max_speed [float]: 1.0;
+    input min_v [float]: -2.0;
+    input max_v [float]: 2.0;
+    input k_s [float]: 1.0;
+    input k_d [float]: 300.0;
+    input gamma [float]: 0.1;
+    alias output __out [throttle_channel];
+}
+
+// Crankshaft
+public node crankshaft_parameter_defaults {
+    input throw: 0.0;
+    input flywheel_mass: 0.0;
+    input mass: 0.0;
+    input friction_torque: 0.0;
+    input moment_of_inertia: 0.0;
+    input position_x: 0.0;
+    input position_y: 0.0;
+    input tdc: 0.0;
+}
+
+private node _crankshaft => __engine_sim__crankshaft {
+    input throw [float]: 0.0;
+    input flywheel_mass [float]: 0.0;
+    input mass [float]: 0.0;
+    input friction_torque [float]: 0.0;
+    input moment_of_inertia [float]: 0.0;
+    input position_x [float]: 0.0;
+    input position_y [float]: 0.0;
+    input tdc [float]: 0.0;
+    alias output __out [crankshaft_channel];
+}
+
+public node crankshaft {
+    input params: crankshaft_parameter_defaults();
+    input throw: params.throw;
+    input flywheel_mass: params.flywheel_mass;
+    input mass: params.mass;
+    input friction_torque: params.friction_torque;
+    input moment_of_inertia: params.moment_of_inertia;
+    input position_x: params.position_x;
+    input position_y: params.position_y;
+    input tdc: params.tdc;
+    alias output __out [_crankshaft]:
+        _crankshaft(
+            throw: throw,
+            flywheel_mass: flywheel_mass,
+            mass: mass,
+            friction_torque: friction_torque,
+            moment_of_inertia: moment_of_inertia,
+            position_x: position_x,
+            position_y: position_y,
+            tdc: tdc
+        );
+}
+
+// Rod Journal
+public node rod_journal => __engine_sim__rod_journal {
+    input angle [float]: 0;
+    alias output __out [rod_journal_channel];
+}
+
+// Connecting Rod
+private node connecting_rod_parameter_defaults {
+    input mass: 0.0;
+    input moment_of_inertia: 0.0;
+    input center_of_mass: 0.0;
+    input length: 0.0;
+    input slave_throw: 0.0;
+}
+
+public node connecting_rod_parameters {
+    input copy: connecting_rod_parameter_defaults();
+    input mass: copy.mass;
+    input moment_of_inertia: copy.moment_of_inertia;
+    input center_of_mass: copy.center_of_mass;
+    input length: copy.length;
+    input slave_throw: copy.slave_throw;
+}
+
+private node _connecting_rod => __engine_sim__connecting_rod {
+    input mass [float];
+    input moment_of_inertia [float];
+    input center_of_mass [float];
+    input length [float];
+    input slave_throw [float];
+    alias output __out [connecting_rod_channel];
+}
+
+public node connecting_rod {
+    input params: connecting_rod_parameters();
+    alias output __out [_connecting_rod]:
+        _connecting_rod(
+            mass: params.mass,
+            moment_of_inertia: params.moment_of_inertia,
+            center_of_mass: params.center_of_mass,
+            length: params.length,
+            slave_throw: params.slave_throw
+        );
+}
+
+// Piston
+public node piston_parameters {
+    input blowby: 0.0;
+    input compression_height: 0.0;
+    input wrist_pin_position: 0.0;
+    input wrist_pin_location: 0.0;
+    input displacement: 0.0;
+    input mass: 0.0;
+}
+
+private node _piston => __engine_sim__piston {
+    input mass [float]: 0.0;
+    input blowby [float]: 0.0;
+    input compression_height [float]: 0.0;
+    input wrist_pin_position [float]: 0.0;
+    input displacement [float]: 0.0;
+    alias output __out [piston_channel];
+}
+
+public node piston {
+    input params: piston_parameters();
+    input blowby: params.blowby;
+    alias output __out [_piston]:
+        _piston(
+            mass: params.mass,
+            blowby: blowby,
+            compression_height: params.compression_height,
+            wrist_pin_position: params.wrist_pin_position,
+            displacement: params.displacement
+        );
+}
+
+// Cylinder Bank
+public node cylinder_bank_parameters {
+    input angle: 0.0;
+    input bore: 0.0;
+    input deck_height: 0.0;
+    input position_x: 0.0;
+    input position_y: 0.0;
+    input display_depth: 0.5;
+}
+
+private node _cylinder_bank => __engine_sim__cylinder_bank {
+    input angle [float]: 0.0;
+    input bore [float]: 0.0;
+    input deck_height [float]: 0.0;
+    input position_x [float]: 0.0;
+    input position_y [float]: 0.0;
+    input display_depth [float]: 0.6;
+    alias output __out [cylinder_bank_channel];
+}
+
+public node cylinder_bank {
+    input parameters: cylinder_bank_parameters();
+    input angle: parameters.angle;
+    input bore: parameters.bore;
+    input deck_height: parameters.deck_height;
+    input position_x: parameters.position_x;
+    input position_y: parameters.position_y;
+    input display_depth: parameters.display_depth;
+    alias output __out [_cylinder_bank]:
+        _cylinder_bank(
+            angle: angle,
+            bore: bore,
+            deck_height: deck_height,
+            position_x: position_x,
+            position_y: position_y,
+            display_depth: display_depth
+        );
+}
+
+// Function
+public node function => __engine_sim__function {
+    input filter_radius [float]: 1.0;
+    alias output __out [function_channel];
+}
+
+// Cylinder
+public node cylinder_friction_parameter_defaults {
+    output friction_k: 0.06;
+    output breakaway_friction: 0.0;
+    output breakaway_friction_velocity: 0.0;
+    output viscous_friction_coefficient: 0.0;
+}
+
+public node cylinder_friction_parameters {
+    input copy: cylinder_friction_parameter_defaults();
+    input friction_k: copy.friction_k;
+    input breakaway_friction: copy.breakaway_friction;
+    input breakaway_friction_velocity: copy.breakaway_friction_velocity;
+    input viscous_friction_coefficient: copy.viscous_friction_coefficient;
+}
+
+// Valvetrain
+public node standard_valvetrain => __engine_sim__standard_valvetrain {
+    input intake_camshaft [camshaft];
+    input exhaust_camshaft [camshaft];
+    alias output __out [valvetrain_channel];
+}
+
+public node vtec_valvetrain => __engine_sim__vtec_valvetrain {
+    input vtec_intake_camshaft [camshaft];
+    input vtec_exhaust_camshaft [camshaft];
+    input intake_camshaft [camshaft];
+    input exhaust_camshaft [camshaft];
+
+    input min_rpm [float]: 5800 * units.rpm;
+    input min_speed [float]: 10 * units.mph;
+    input manifold_vacuum [float]: 1.0 * units.atm - 5.0 * units.inHg;
+    input min_throttle_position [float]: 0.3;
+
+    alias output __out [valvetrain_channel];
+}
+
+// Cylinder Head
+public node cylinder_head_parameters {
+    input intake_port_flow: function();
+    input exhaust_port_flow: function();
+    input chamber_volume: 118.0 * units.cc;
+
+    input intake_runner_volume: 300.0 * units.cc;
+    input intake_runner_cross_section_area: circle_area(0.75 * units.inch);
+
+    input exhaust_runner_volume: 300.0 * units.cc;
+    input exhaust_runner_cross_section_area: circle_area(0.85 * units.inch);
+
+    input flip_display: false;
+}
+
+private node _cylinder_head => __engine_sim__cylinder_head {
+    input intake_port_flow [function];
+    input exhaust_port_flow [function];
+    input valvetrain [valvetrain_channel];
+    input chamber_volume [float];
+    input intake_runner_volume [float];
+    input intake_runner_cross_section_area [float];
+    input exhaust_runner_volume [float];
+    input exhaust_runner_cross_section_area [float];
+    input flip_display [bool];
+    alias output __out [cylinder_head_channel];
+}
+
+public node generic_cylinder_head {
+    input parameters: cylinder_head_parameters();
+    input valvetrain;
+
+    input intake_port_flow: parameters.intake_port_flow;
+    input exhaust_port_flow: parameters.exhaust_port_flow;
+
+    input chamber_volume: parameters.chamber_volume;
+
+    input intake_runner_volume: parameters.intake_runner_volume;
+    input intake_runner_cross_section_area: parameters.intake_runner_cross_section_area;
+
+    input exhaust_runner_volume: parameters.exhaust_runner_volume;
+    input exhaust_runner_cross_section_area: parameters.exhaust_runner_cross_section_area;
+
+    input flip_display: parameters.flip_display;
+
+    alias output __out [_cylinder_head]:
+        _cylinder_head(
+            intake_port_flow: intake_port_flow,
+            exhaust_port_flow: exhaust_port_flow,
+            chamber_volume: chamber_volume,
+            intake_runner_volume: intake_runner_volume,
+            intake_runner_cross_section_area: intake_runner_cross_section_area,
+            exhaust_runner_volume: exhaust_runner_volume,
+            exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+            flip_display: flip_display,
+            valvetrain: valvetrain
+        );
+}
+
+public node cylinder_head {
+    input parameters: cylinder_head_parameters();
+
+    input intake_camshaft;
+    input exhaust_camshaft;
+
+    input intake_port_flow: parameters.intake_port_flow;
+    input exhaust_port_flow: parameters.exhaust_port_flow;
+
+    input chamber_volume: parameters.chamber_volume;
+
+    input intake_runner_volume: parameters.intake_runner_volume;
+    input intake_runner_cross_section_area: parameters.intake_runner_cross_section_area;
+
+    input exhaust_runner_volume: parameters.exhaust_runner_volume;
+    input exhaust_runner_cross_section_area: parameters.exhaust_runner_cross_section_area;
+
+    input flip_display: parameters.flip_display;
+
+    alias output __out [_cylinder_head]:
+        generic_cylinder_head(
+            intake_port_flow: intake_port_flow,
+            exhaust_port_flow: exhaust_port_flow,
+            chamber_volume: chamber_volume,
+            intake_runner_volume: intake_runner_volume,
+            intake_runner_cross_section_area: intake_runner_cross_section_area,
+            exhaust_runner_volume: exhaust_runner_volume,
+            exhaust_runner_cross_section_area: exhaust_runner_cross_section_area,
+            flip_display: flip_display,
+            valvetrain: standard_valvetrain(
+                intake_camshaft: intake_camshaft,
+                exhaust_camshaft: exhaust_camshaft
+            )
+        );
+}
+
+// Camshaft
+public node camshaft_parameters {
+    input advance: 0.0;
+    input base_radius: 0.0;
+    input lobe_profile: function();
+}
+
+private node _camshaft => __engine_sim__camshaft {
+    input advance [float];
+    input base_radius [float];
+    input lobe_profile [function];
+    alias output __out [camshaft_channel];
+}
+
+public node camshaft {
+    input parameters: camshaft_parameters();
+    input advance: parameters.advance;
+    input base_radius: parameters.base_radius;
+    input lobe_profile: parameters.lobe_profile;
+    alias output __out [_camshaft]:
+        _camshaft(
+            advance: advance,
+            base_radius: base_radius,
+            lobe_profile: lobe_profile
+        );
+}
+
+// Intake
+public node intake_parameters {
+    input plenum_volume: 2.0 * units.L;
+    input plenum_cross_section_area: 100.0 * units.cm2;
+    input intake_flow_rate: 0.0;
+    input idle_flow_rate: 0.0;
+    input molecular_afr: (25.0 / 2.0);
+    input idle_throttle_plate_position: 0.975;
+    input throttle_gamma: 2.0;
+    input runner_length: 4.0 * units.inch;
+    input runner_flow_rate: k_carb(200.0);
+    input velocity_decay: 0.25;
+}
+
+private node _intake => __engine_sim__intake {
+    input plenum_volume [float];
+    input plenum_cross_section_area [float];
+    input intake_flow_rate [float];
+    input idle_flow_rate [float];
+    input runner_flow_rate [float];
+    input molecular_afr [float];
+    input idle_throttle_plate_position [float];
+    input throttle_gamma [float];
+    input runner_length [float];
+    input velocity_decay [float];
+    alias output __out [intake_channel];
+}
+
+public node intake {
+    input parameters: intake_parameters();
+    input plenum_volume: parameters.plenum_volume;
+    input plenum_cross_section_area: parameters.plenum_cross_section_area;
+    input intake_flow_rate: parameters.intake_flow_rate;
+    input idle_flow_rate: parameters.idle_flow_rate;
+    input runner_flow_rate: parameters.runner_flow_rate;
+    input molecular_afr: parameters.molecular_afr;
+    input idle_throttle_plate_position: parameters.idle_throttle_plate_position;
+    input throttle_gamma: parameters.throttle_gamma;
+    input runner_length: parameters.runner_length;
+    input velocity_decay: parameters.velocity_decay;
+    alias output __out [_intake]:
+        _intake(
+            plenum_volume: plenum_volume,
+            plenum_cross_section_area: plenum_cross_section_area,
+            intake_flow_rate: intake_flow_rate,
+            idle_flow_rate: idle_flow_rate,
+            runner_flow_rate: runner_flow_rate,
+            molecular_afr: molecular_afr,
+            idle_throttle_plate_position: idle_throttle_plate_position,
+            throttle_gamma: throttle_gamma,
+            runner_length: runner_length,
+            velocity_decay: velocity_decay
+        );
+}
+
+// Exhaust System
+public node impulse_response => __engine_sim__impulse_response {
+    input filename [string];
+    input volume [float]: 1.0;
+    alias output __out [impulse_response_channel];
+}
+
+public node exhaust_system_parameters {
+    input volume: 100.0 * units.L;
+    input length: volume / collector_cross_section_area;
+    input collector_cross_section_area: circle_area(2.0 * units.inch);
+    input outlet_flow_rate: k_carb(1000.0);
+    input primary_tube_length: 10.0 * units.inch;
+    input primary_flow_rate: k_carb(100.0);
+    input audio_volume: 1.0;
+    input velocity_decay: 1.0;
+}
+
+private node _exhaust_system => __engine_sim__exhaust_system {
+    input length [float];
+    input collector_cross_section_area [float];
+    input outlet_flow_rate [float];
+    input primary_tube_length [float];
+    input primary_flow_rate [float];
+    input audio_volume [float];
+    input velocity_decay [float];
+    input impulse_response [impulse_response];
+    alias output __out [exhaust_system_channel];
+}
+
+public node exhaust_system {
+    input parameters: exhaust_system_parameters();
+    input length: parameters.length;
+    input collector_cross_section_area: parameters.collector_cross_section_area;
+    input outlet_flow_rate: parameters.outlet_flow_rate;   
+    input primary_tube_length: parameters.primary_tube_length;
+    input primary_flow_rate: parameters.primary_flow_rate;
+    input audio_volume: parameters.audio_volume;
+    input velocity_decay: parameters.velocity_decay;
+    input impulse_response;
+    alias output __out [_exhaust_system]:
+        _exhaust_system(
+            length: length,
+            collector_cross_section_area: collector_cross_section_area,
+            outlet_flow_rate: outlet_flow_rate,
+            primary_tube_length: primary_tube_length,
+            primary_flow_rate: primary_flow_rate,
+            audio_volume: audio_volume,
+            velocity_decay: velocity_decay,
+            impulse_response: impulse_response
+        );
+}
+
+// Ignition Module
+public node ignition_module => __engine_sim__ignition_module {
+    input timing_curve [function];
+    input rev_limit [float]: 7000.0 * units.rpm;
+    input limiter_duration [float]: 0.5 * units.sec;
+    alias output __out [ignition_module_channel];
+}
+
+public node ignition_wire => __engine_sim__ignition_wire {
+    alias output __out [ignition_wire_channel];
+}
+
+public node vehicle => __engine_sim__vehicle {
+    input mass [float]: 1000 * units.kg;
+    input drag_coefficient [float]: 0.25;
+    input cross_sectional_area [float]: (72 * units.inch) * (72 * units.inch);
+    input diff_ratio [float]: 3.42;
+    input tire_radius [float]: 10 * units.inch;
+    input rolling_resistance [float]: 2000;
+
+    alias output __out [vehicle_channel];
+}
+
+public node transmission => __engine_sim__transmission {
+    input max_clutch_torque [float]: 1000 * units.lb_ft;
+    alias output __out [transmission_channel];
+}

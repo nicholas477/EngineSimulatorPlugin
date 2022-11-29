@@ -1,0 +1,33 @@
+module {
+    @name:      "Engine Simulator Library"
+    @author:    "ATG (Ange Yaghi)"
+    @copyright: "Copyright 2022, Ange Yaghi"
+}
+
+// Types
+public import "types/atomic_types.mr"
+public import "types/conversions.mr"
+public import "types/operations.mr"
+
+// Actions
+public import "actions/actions.mr"
+
+// Objects
+public import "objects/objects.mr"
+
+// Constants
+public import "constants/constants.mr"
+public import "constants/units.mr"
+
+// Infrastructure
+public import "infrastructure/infrastructure.mr"
+
+// Library
+public import "part-library/part_library.mr"
+public import "sound-library/impulse_responses.mr"
+
+// Utilities
+public import "utilities/utilities.mr"
+
+// Application settings
+public import "settings/application_settings.mr"
