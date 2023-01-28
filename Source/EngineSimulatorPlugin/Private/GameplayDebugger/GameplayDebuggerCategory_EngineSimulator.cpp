@@ -17,7 +17,7 @@ void FGameplayDebuggerCategory_EngineSimulator::CollectData(APlayerController* O
     if (this == nullptr)
         return;
 
-    if (APawn* DebugActorPawn = Cast<APawn>(DebugActor))
+    if (APawn* DebugActorPawn = OwnerPC->GetPawn())
     {
         using ESWHMC = UEngineSimulatorWheeledVehicleMovementComponent;
         if (auto* MovementComponent = Cast<ESWHMC>(DebugActorPawn->GetComponentByClass(ESWHMC::StaticClass())))

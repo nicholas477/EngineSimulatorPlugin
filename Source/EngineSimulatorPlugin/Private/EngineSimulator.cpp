@@ -4,6 +4,7 @@
 #include "EngineSimulatorPlugin.h"
 #include "Sound/SoundWave.h"
 #include "Sound/SoundWaveProcedural.h"
+#include "HAL/FileManager.h"
 
 #include "EngineSimulatorInternals/HeaderFixesStart.h"
 
@@ -164,6 +165,8 @@ public:
         return "";
     }
     // End IEngineSimulatorInterface
+    
+    virtual int32 GenerateAudio(float* OutAudio, int32 NumSamples) override;
 
 protected:
     void loadScript();
@@ -183,8 +186,6 @@ protected:
     AudioBuffer m_audioBuffer;
     uint32 PlayCursor;
     std::vector<uint8> Buffer;
-
-    void FillAudio(USoundWaveProcedural* Wave, const int32 SamplesNeeded);
 };
 
 FEngineSimulator::FEngineSimulator(const FEngineSimulatorParameters& InParameters)
@@ -204,20 +205,10 @@ FEngineSimulator::FEngineSimulator(const FEngineSimulatorParameters& InParameter
 
     m_audioBuffer.initialize(44100, 44100);
     m_audioBuffer.m_writePointer = (int)(44100 * 0.1);
-
-    check(Parameters.SoundWaveOutput);
-    if (Parameters.SoundWaveOutput)
-    {
-        Parameters.SoundWaveOutput->OnSoundWaveProceduralUnderflow.BindRaw(this, &FEngineSimulator::FillAudio);
-    }
 }
 
 FEngineSimulator::~FEngineSimulator()
 {
-    if (Parameters.SoundWaveOutput)
-    {
-        Parameters.SoundWaveOutput->OnSoundWaveProceduralUnderflow.Unbind();
-    }
     m_simulator.endAudioRenderingThread();
 }
 
@@ -476,53 +467,25 @@ void FEngineSimulator::process(float frame_dt)
 
 const static int32 SampleRate = 44100;
 
-void FEngineSimulator::FillAudio(USoundWaveProcedural* Wave, const int32 SamplesNeeded)
+int32 FEngineSimulator::GenerateAudio(float* OutAudio, int32 NumSamples)
 {
-    // Unreal engine uses a fixed sample size.
-    static const uint32 SAMPLE_SIZE = sizeof(uint16);
+    // Read out engine sound output as int16
+    TArray<int16> AudioBuffer;
+    AudioBuffer.AddZeroed(NumSamples);
 
-    //if (!StartPlaying.test_and_set())
-    //{
-    //    PlayCursor = 0;
-    //    bPlayingSound = true;
-    //}
+    const uint32 SampleCount = NumSamples;
+    const int ReadSamples = m_simulator.readAudioOutput(NumSamples, AudioBuffer.GetData());
 
-    // We're using only one channel.
-    
-    const uint32 SampleCount = SamplesNeeded;// FMath::Min<uint32>(OptimalSampleCount, SamplesNeeded);
-    int16_t* samples = new int16_t[SamplesNeeded];
-    const int readSamples = m_simulator.readAudioOutput(SamplesNeeded, samples);
+    // Convert back to float
+    for (int32 SampleIndex = 0; SampleIndex < NumSamples; ++SampleIndex)
+    {
+        OutAudio[SampleIndex] = (float)AudioBuffer[SampleIndex] / 32768.0f;
+    }
 
-    // If we're not playing, fill the buffer with zeros for silence.
-    //if (!bPlayingSound)
-    //{
-    //    const uint32 ByteCount = SampleCount * SAMPLE_SIZE;
-    //    Buffer.resize(ByteCount);
-    //    FMemory::Memset(&Buffer[0], 0, ByteCount);
-    //    Wave->QueueAudio(&Buffer[0], ByteCount);
-    //    return;
-    //}
-
-    //uint32 Fraction = 1; // Fraction of a second to play.
-    //float Frequency = 1046.5;
-    //uint32 TotalSampleCount = SampleRate / Fraction;
-
-    //Buffer.resize(SampleCount * SAMPLE_SIZE);
-    //int16* data = (int16*)&Buffer[0];
-
-
-    //PlayCursor += SampleCount;
-
-    //if (PlayCursor >= TotalSampleCount)
-    //{
-    //    bPlayingSound = false;
-    //}
-
-    Wave->QueueAudio((const uint8*)samples, SampleCount * SAMPLE_SIZE);
+    return ReadSamples;
 }
 
-
-TUniquePtr<IEngineSimulatorInterface> CreateEngine(const FEngineSimulatorParameters& Parameters)
+TSharedPtr<IEngineSimulatorInterface> CreateEngine(const FEngineSimulatorParameters& Parameters)
 {
-    return MakeUnique<FEngineSimulator>(Parameters);
+    return MakeShared<FEngineSimulator>(Parameters);
 }

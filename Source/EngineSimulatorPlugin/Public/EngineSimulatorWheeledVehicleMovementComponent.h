@@ -11,7 +11,7 @@
 class USoundWave;
 class USoundWaveProcedural;
 
-UCLASS()
+UCLASS(ClassGroup = "Engine Simulator", meta = (BlueprintSpawnableComponent))
 class ENGINESIMULATORPLUGIN_API UEngineSimulatorWheeledVehicleMovementComponent : public UChaosWheeledVehicleMovementComponent
 {
 	GENERATED_UCLASS_BODY()
@@ -56,6 +56,11 @@ class ENGINESIMULATORPLUGIN_API UEngineSimulatorWheeledVehicleMovementComponent 
 
 public:
 	virtual TUniquePtr<Chaos::FSimpleWheeledVehicle> CreatePhysicsVehicle() override;
+
+	TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const;
+
+	// Get output data from Physics Thread
+	virtual void ParallelUpdate(float DeltaSeconds);
 
 #if WITH_GAMEPLAY_DEBUGGER
 	virtual void DescribeSelfToGameplayDebugger(class FGameplayDebuggerCategory* DebuggerCategory) const;

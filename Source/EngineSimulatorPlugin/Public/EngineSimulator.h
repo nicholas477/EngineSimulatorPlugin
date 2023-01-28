@@ -3,13 +3,14 @@
 #pragma once
 
 #include "Templates/UniquePtr.h"
+#include "Sound/SoundGenerator.h"
 
 class Simulator;
 class Engine;
 class Vehicle;
 class Transmission;
 
-class ENGINESIMULATORPLUGIN_API IEngineSimulatorInterface
+class ENGINESIMULATORPLUGIN_API IEngineSimulatorInterface : public TSharedFromThis<IEngineSimulatorInterface, ESPMode::ThreadSafe>
 {
 public:
 	virtual void Simulate(float DeltaTime) = 0;
@@ -33,6 +34,11 @@ public:
 	virtual bool HasEngine() = 0;
 	virtual FString GetName() = 0;
 	virtual ~IEngineSimulatorInterface() {};
+
+	// Consume audio from engine simulator. Returns the number of samples sampled
+	// Returns mono audio at 44100 sample rate
+	// This is safe to call from any thread
+	virtual int32 GenerateAudio(float* OutAudio, int32 NumSamples) = 0;
 };
 
 struct FEngineSimulatorParameters
@@ -41,4 +47,4 @@ struct FEngineSimulatorParameters
 	class USoundWaveProcedural* SoundWaveOutput = nullptr;
 };
 
-TUniquePtr<IEngineSimulatorInterface> CreateEngine(const FEngineSimulatorParameters& Parameters);
+TSharedPtr<IEngineSimulatorInterface> CreateEngine(const FEngineSimulatorParameters& Parameters);

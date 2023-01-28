@@ -42,13 +42,34 @@ bool FEngineSimulatorThread::Init()
 	return true;
 }
 
+DECLARE_FLOAT_COUNTER_STAT_EXTERN(TEXT("Simulation Frame Time (ms)"), STAT_EngineSimulatorFrame, STATGROUP_EngineSimulatorPlugin, );
+DECLARE_FLOAT_COUNTER_STAT_EXTERN(TEXT("Simulation Input Delta Time (ms)"), STAT_EngineSimulatorInputDeltaTime, STATGROUP_EngineSimulatorPlugin, );
+
+DEFINE_STAT(STAT_EngineSimulatorFrame);
+DEFINE_STAT(STAT_EngineSimulatorInputDeltaTime);
+
 uint32 FEngineSimulatorThread::Run()
 {
 	EngineSimulator = CreateEngine(Parameters);
 
+	LastSimulationTime = FPlatformTime::Seconds();
+
+	const double SemaphoreWaitTime = 8.0 / 1000; // Wait time before next time
+
 	while (!bStopRequested)
 	{
-		Semaphore->Wait();
+		double WaitTime = (LastSimulationTime + SemaphoreWaitTime) - FPlatformTime::Seconds();
+		if (WaitTime > 0)
+		{
+			if (Semaphore->Wait(FTimespan::FromSeconds(WaitTime)))
+			{
+				if (bStopRequested)
+				{
+					break;
+				}
+			}
+		}
+
 		if (bStopRequested)
 		{
 			break;
@@ -60,6 +81,9 @@ uint32 FEngineSimulatorThread::Run()
 				FScopeLock Lock(&InputMutex);
 				ThisInput = Input;
 			}
+
+			ThisInput.DeltaTime = FPlatformTime::Seconds() - LastSimulationTime;
+			LastSimulationTime = FPlatformTime::Seconds();
 
 			{
 				SCOPE_CYCLE_COUNTER(STAT_EngineSimulatorPlugin_UpdateSimulation);
@@ -73,7 +97,18 @@ uint32 FEngineSimulatorThread::Run()
 					SimulationUpdate(EngineSimulator.Get());
 				}
 
+				SET_FLOAT_STAT(STAT_EngineSimulatorInputDeltaTime, ThisInput.DeltaTime * 1000);
+				double ThisFrameTime = FPlatformTime::Seconds();
+
 				EngineSimulator->Simulate(ThisInput.DeltaTime);
+
+				double FrameTime = FPlatformTime::Seconds() - ThisFrameTime;
+				SET_FLOAT_STAT(STAT_EngineSimulatorFrame, FrameTime * 1000);
+
+				//if (FrameTime > ThisInput.DeltaTime)
+				//{
+				//	UE_LOG(LogTemp, Warning, TEXT("Engine simulator took too long! Simulation DeltaTime: %f(ms), Realtime: %f(ms)"), ThisInput.DeltaTime * 1000, FrameTime * 1000);
+				//}
 
 				float TransmissionTorque = EngineSimulator->GetFilteredDynoTorque() * EngineSimulator->GetGearRatio();
 
@@ -88,8 +123,12 @@ uint32 FEngineSimulatorThread::Run()
 						Grounded = ThisInput.InContactWithGround
 					](FGameplayDebuggerCategory* GameplayDebugger)
 				{
+					GameplayDebugger->AddTextLine("hgello");
+
 					if (bHasEngine)
 					{
+						UE_LOG(LogTemp, Warning, TEXT("asdf"));
+
 						GameplayDebugger->AddTextLine(
 							FString::Printf(TEXT("{yellow}Engine: {white}%s"), *EngineName)
 						);
@@ -121,6 +160,7 @@ uint32 FEngineSimulatorThread::Run()
 					Output.Redline = EngineSimulator->GetRedLine();
 					Output.Horsepower = EngineSimulator->GetDynoPower();
 					Output.Name = EngineSimulator->GetName();
+					Output.CurrentGear = EngineSimulator->GetGear();
 					Output.NumGears = EngineSimulator->GetGearCount();
 					Output.FrameCounter = ThisInput.FrameCounter + 1;
 				}
@@ -150,12 +190,16 @@ void FEngineSimulatorThread::Trigger()
 	Semaphore->Trigger();
 }
 
-UEngineSimulatorWheeledVehicleSimulation::UEngineSimulatorWheeledVehicleSimulation(TArray<class UChaosVehicleWheel*>& WheelsIn, 
-	const FEngineSimulatorParameters& InParameters)
-	: UChaosWheeledVehicleSimulation(WheelsIn)
-	, Parameters(InParameters)
+UEngineSimulatorWheeledVehicleSimulation::UEngineSimulatorWheeledVehicleSimulation(const FEngineSimulatorParameters& InParameters)
+	: Parameters(InParameters)
 {
-	EngineSimulatorThread = MakeUnique<FEngineSimulatorThread>(InParameters);
+}
+
+void UEngineSimulatorWheeledVehicleSimulation::Init(TUniquePtr<Chaos::FSimpleWheeledVehicle>& PVehicleIn)
+{
+	UChaosWheeledVehicleSimulation::Init(PVehicleIn);
+
+	EngineSimulatorThread = MakeUnique<FEngineSimulatorThread>(Parameters);
 }
 
 void UEngineSimulatorWheeledVehicleSimulation::ProcessMechanicalSimulation(float DeltaTime)
@@ -213,7 +257,7 @@ void UEngineSimulatorWheeledVehicleSimulation::ProcessMechanicalSimulation(float
 		EngineSimulatorThread->Trigger();
 
 		// apply drive torque to wheels
-		for (int WheelIdx = 0; WheelIdx < Wheels.Num(); WheelIdx++)
+		for (int WheelIdx = 0; WheelIdx < PVehicle->Wheels.Num(); WheelIdx++)
 		{
 			auto& PWheel = PVehicle->Wheels[WheelIdx];
 			//PWheel.bInContact = true; // fuck you epic

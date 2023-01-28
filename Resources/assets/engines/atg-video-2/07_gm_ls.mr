@@ -438,7 +438,7 @@ private node corvette {
 private node corvette_transmission {
     alias output __out:
         transmission(
-            max_clutch_torque: 500 * units.lb_ft
+            max_clutch_torque: 1000 * units.lb_ft
         )
         .add_gear(2.97)
         .add_gear(2.07)

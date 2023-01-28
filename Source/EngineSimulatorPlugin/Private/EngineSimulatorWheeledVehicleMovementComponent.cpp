@@ -23,6 +23,8 @@ UEngineSimulatorWheeledVehicleMovementComponent::UEngineSimulatorWheeledVehicleM
 	OutputEngineSound->Duration = INDEFINITELY_LOOPING_DURATION;
 	OutputEngineSound->SoundGroup = SOUNDGROUP_Default;
 	OutputEngineSound->bLooping = false;
+	OutputEngineSound->bEnableBusSends = true;
+	//OutputEngineSound->Bus
 }
 
 void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -114,7 +116,7 @@ TUniquePtr<Chaos::FSimpleWheeledVehicle> UEngineSimulatorWheeledVehicleMovementC
 	EngineParameters.SoundWaveOutput = OutputEngineSound;
 
 	// Make the Vehicle Simulation class that will be updated from the physics thread async callback
-	VehicleSimulationPT = MakeUnique<UEngineSimulatorWheeledVehicleSimulation>(Wheels, EngineParameters);
+	VehicleSimulationPT = MakeUnique<UEngineSimulatorWheeledVehicleSimulation>(EngineParameters);
 
 	((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get())->AsyncUpdateSimulation([=](IEngineSimulatorInterface* EngineInterface)
 	{
@@ -126,6 +128,30 @@ TUniquePtr<Chaos::FSimpleWheeledVehicle> UEngineSimulatorWheeledVehicleMovementC
 	CurrentGear = -1;
 
 	return UChaosVehicleMovementComponent::CreatePhysicsVehicle();
+}
+
+TSharedPtr<IEngineSimulatorInterface> UEngineSimulatorWheeledVehicleMovementComponent::GetEngineSimulator() const
+{
+	if (VehicleSimulationPT)
+	{
+		return ((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get())->GetEngineSimulator();
+	}
+
+	return nullptr;
+}
+
+void UEngineSimulatorWheeledVehicleMovementComponent::ParallelUpdate(float DeltaSeconds)
+{
+	Super::ParallelUpdate(DeltaSeconds);
+
+	if (PVehicleOutput)
+	{
+		UEngineSimulatorWheeledVehicleSimulation* VS = ((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get());
+		auto LastOutput = VS->GetLastOutput();
+
+		PVehicleOutput->CurrentGear = LastOutput.CurrentGear + 1;
+		PVehicleOutput->TargetGear = LastOutput.CurrentGear + 1;
+	}
 }
 
 #if WITH_GAMEPLAY_DEBUGGER

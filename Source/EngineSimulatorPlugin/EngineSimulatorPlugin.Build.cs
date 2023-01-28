@@ -15,7 +15,8 @@ public class EngineSimulatorPlugin : ModuleRules
                 "CoreUObject",
 				"Engine",
                 "Projects",
-                "ChaosVehicles"
+                "ChaosVehicles",
+                "AudioMixer"
             }
 		);
 

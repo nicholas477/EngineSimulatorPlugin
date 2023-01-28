@@ -72,6 +72,8 @@ public:
 	void Trigger();
 	void PrintGameplayDebuggerInfo(FGameplayDebuggerCategory* GameplayDebugger);
 
+	TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const { return EngineSimulator; }
+
 protected:
 	TAtomic<bool> bStopRequested;
 
@@ -82,12 +84,14 @@ protected:
 	FEngineSimulatorOutput Output;
 
 	FEvent* Semaphore;
-	TUniquePtr<IEngineSimulatorInterface> EngineSimulator;
+	TSharedPtr<IEngineSimulatorInterface> EngineSimulator;
 	FEngineSimulatorParameters Parameters;
 
 	TQueue<TFunction<void(IEngineSimulatorInterface*)>, EQueueMode::Mpsc> UpdateQueue;
 
 	FRunnableThread* Thread;
+
+	TAtomic<double> LastSimulationTime;
 
 #if WITH_GAMEPLAY_DEBUGGER
 	TFunction<void(FGameplayDebuggerCategory*)> GameplayDebuggerPrint;
@@ -98,8 +102,10 @@ protected:
 class UEngineSimulatorWheeledVehicleSimulation : public UChaosWheeledVehicleSimulation
 {
 public:
-	UEngineSimulatorWheeledVehicleSimulation(TArray<class UChaosVehicleWheel*>& WheelsIn, const FEngineSimulatorParameters& InParameters);
+	UEngineSimulatorWheeledVehicleSimulation(const FEngineSimulatorParameters& InParameters);
 	virtual ~UEngineSimulatorWheeledVehicleSimulation() = default;
+
+	virtual void Init(TUniquePtr<Chaos::FSimpleWheeledVehicle>& PVehicleIn) override;
 
 	/** Update the engine/transmission simulation */
 	virtual void ProcessMechanicalSimulation(float DeltaTime) override;
@@ -117,6 +123,8 @@ public:
 #if WITH_GAMEPLAY_DEBUGGER
 	void PrintGameplayDebuggerInfo(FGameplayDebuggerCategory* GameplayDebugger);
 #endif
+
+	TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const { return EngineSimulatorThread ? EngineSimulatorThread->GetEngineSimulator() : nullptr; }
 
 protected:
 	TUniquePtr<FEngineSimulatorThread> EngineSimulatorThread;
