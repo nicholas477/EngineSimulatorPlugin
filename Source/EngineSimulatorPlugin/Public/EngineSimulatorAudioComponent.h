@@ -39,7 +39,11 @@ public:
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
+	// If true, then this component will look for the engine simulator movement component on its owner
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Engine Simulator Audio Component")
+		bool bAutomaticallySetEngineComponent;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Engine Simulator Audio Component", meta=(EditCondition="!bAutomaticallySetEngineComponent"))
 		TWeakObjectPtr<UEngineSimulatorWheeledVehicleMovementComponent> EngineComponent;
 
 	TSharedPtr<IEngineSimulatorInterface> EngineSimulator;

@@ -11,10 +11,23 @@ UEngineSimulatorAudioComponent::UEngineSimulatorAudioComponent(const FObjectInit
 	PrimaryComponentTick.bCanEverTick = true;
 	SetComponentTickEnabled(true);
 	bAutoActivate = true;
+
+	bAutomaticallySetEngineComponent = true;
 }
 
 bool UEngineSimulatorAudioComponent::Init(int32& InSampleRate)
 {
+	check(IsInGameThread());
+
+	if (bAutomaticallySetEngineComponent)
+	{
+		auto* VHMC = Cast<UEngineSimulatorWheeledVehicleMovementComponent>(GetOwner()->GetComponentByClass(UEngineSimulatorWheeledVehicleMovementComponent::StaticClass()));
+		if (VHMC)
+		{
+			EngineComponent = VHMC;
+		}
+	}
+
 	NumChannels = 1;
 	InSampleRate = 44000;
 	return true;
