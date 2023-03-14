@@ -31,6 +31,8 @@ public:
 	virtual float GetGearRatio() = 0;
 	virtual int32 GetGearCount() = 0;
 	virtual bool IsDynoEnabled() = 0;
+	virtual bool IsStarterEnabled() = 0;
+	virtual bool IsIgnitionEnabled() = 0;
 	virtual bool HasEngine() = 0;
 	virtual FString GetName() = 0;
 	virtual ~IEngineSimulatorInterface() {};

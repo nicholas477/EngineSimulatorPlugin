@@ -17,14 +17,7 @@ UEngineSimulatorWheeledVehicleMovementComponent::UEngineSimulatorWheeledVehicleM
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	OutputEngineSound = CreateDefaultSubobject<USoundWaveProcedural>(FName("Engine Sound Output"));
-	OutputEngineSound->SetSampleRate(44000);
-	OutputEngineSound->NumChannels = 1;
-	OutputEngineSound->Duration = INDEFINITELY_LOOPING_DURATION;
-	OutputEngineSound->SoundGroup = SOUNDGROUP_Default;
-	OutputEngineSound->bLooping = false;
-	OutputEngineSound->bEnableBusSends = true;
-	//OutputEngineSound->Bus
+	SleepThreshold = 0; // Disable vehicle sleep. This is required
 }
 
 void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -34,6 +27,13 @@ void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaT
 	{
 		UEngineSimulatorWheeledVehicleSimulation* VS = ((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get());
 		LastEngineSimulatorOutput = VS->GetLastOutput();
+
+		if (PVehicleOutput)
+		{
+			PVehicleOutput->CurrentGear = LastEngineSimulatorOutput.CurrentGear + 1;
+			PVehicleOutput->TargetGear = LastEngineSimulatorOutput.CurrentGear + 1;
+			PVehicleOutput->EngineRPM = LastEngineSimulatorOutput.RPM;
+		}
 	}
 }
 
@@ -68,7 +68,6 @@ void UEngineSimulatorWheeledVehicleMovementComponent::RespawnEngine()
 {
 	FEngineSimulatorParameters EngineParameters;
 	EngineParameters.bShowGUI = false;
-	EngineParameters.SoundWaveOutput = OutputEngineSound;
 
 	// Make the Vehicle Simulation class that will be updated from the physics thread async callback
 	((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get())->Reset(EngineParameters);
@@ -109,11 +108,23 @@ void UEngineSimulatorWheeledVehicleMovementComponent::SetStarterEnabled(bool bEn
 	}
 }
 
-TUniquePtr<Chaos::FSimpleWheeledVehicle> UEngineSimulatorWheeledVehicleMovementComponent::CreatePhysicsVehicle() 
+void UEngineSimulatorWheeledVehicleMovementComponent::CreateVehicle()
+{
+	Super::CreateVehicle();
+
+	((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get())->AsyncUpdateSimulation([=](IEngineSimulatorInterface* EngineInterface)
+		{
+			EngineInterface->SetIgnitionEnabled(true);
+			EngineInterface->SetStarterEnabled(bStarterAutomaticallyEnabled);
+		});
+
+	bStarterEnabled = bStarterAutomaticallyEnabled;
+}
+
+TUniquePtr<Chaos::FSimpleWheeledVehicle> UEngineSimulatorWheeledVehicleMovementComponent::CreatePhysicsVehicle()
 {
 	FEngineSimulatorParameters EngineParameters;
 	EngineParameters.bShowGUI = false;
-	EngineParameters.SoundWaveOutput = OutputEngineSound;
 
 	// Make the Vehicle Simulation class that will be updated from the physics thread async callback
 	VehicleSimulationPT = MakeUnique<UEngineSimulatorWheeledVehicleSimulation>(EngineParameters);
@@ -151,6 +162,7 @@ void UEngineSimulatorWheeledVehicleMovementComponent::ParallelUpdate(float Delta
 
 		PVehicleOutput->CurrentGear = LastOutput.CurrentGear + 1;
 		PVehicleOutput->TargetGear = LastOutput.CurrentGear + 1;
+		PVehicleOutput->EngineRPM = LastOutput.RPM;
 	}
 }
 

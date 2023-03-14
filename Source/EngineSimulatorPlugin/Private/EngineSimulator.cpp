@@ -151,6 +151,21 @@ public:
         return m_simulator.m_dyno.m_enabled;
     }
 
+    virtual bool IsStarterEnabled()
+    {
+        return m_simulator.m_starterMotor.m_enabled;
+    }
+
+    virtual bool IsIgnitionEnabled()
+    {
+        if (m_simulator.getEngine() && m_simulator.getEngine()->getIgnitionModule())
+        {
+            return m_simulator.getEngine()->getIgnitionModule()->m_enabled;
+        }
+
+        return false;
+    }
+
     virtual bool HasEngine()
     {
         return m_simulator.getEngine() != nullptr;

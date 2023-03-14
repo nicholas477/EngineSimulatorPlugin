@@ -76,95 +76,7 @@ uint32 FEngineSimulatorThread::Run()
 		}
 		else
 		{
-			FEngineSimulatorInput ThisInput;
-			{
-				FScopeLock Lock(&InputMutex);
-				ThisInput = Input;
-			}
-
-			ThisInput.DeltaTime = FPlatformTime::Seconds() - LastSimulationTime;
-			LastSimulationTime = FPlatformTime::Seconds();
-
-			{
-				SCOPE_CYCLE_COUNTER(STAT_EngineSimulatorPlugin_UpdateSimulation);
-				float DynoSpeed = ThisInput.EngineRPM * (EngineSimulator->GetGearRatio() == 0.f ? 1000000.f : EngineSimulator->GetGearRatio());
-				EngineSimulator->SetDynoSpeed(DynoSpeed);
-				EngineSimulator->SetDynoEnabled(ThisInput.InContactWithGround);
-
-				TFunction<void(IEngineSimulatorInterface*)> SimulationUpdate;
-				while (UpdateQueue.Dequeue(SimulationUpdate))
-				{
-					SimulationUpdate(EngineSimulator.Get());
-				}
-
-				SET_FLOAT_STAT(STAT_EngineSimulatorInputDeltaTime, ThisInput.DeltaTime * 1000);
-				double ThisFrameTime = FPlatformTime::Seconds();
-
-				EngineSimulator->Simulate(ThisInput.DeltaTime);
-
-				double FrameTime = FPlatformTime::Seconds() - ThisFrameTime;
-				SET_FLOAT_STAT(STAT_EngineSimulatorFrame, FrameTime * 1000);
-
-				//if (FrameTime > ThisInput.DeltaTime)
-				//{
-				//	UE_LOG(LogTemp, Warning, TEXT("Engine simulator took too long! Simulation DeltaTime: %f(ms), Realtime: %f(ms)"), ThisInput.DeltaTime * 1000, FrameTime * 1000);
-				//}
-
-				float TransmissionTorque = EngineSimulator->GetFilteredDynoTorque() * EngineSimulator->GetGearRatio();
-
-#if WITH_GAMEPLAY_DEBUGGER
-				GameplayDebuggerPrint = [
-						bHasEngine = EngineSimulator->HasEngine(),
-						EngineName = EngineSimulator->GetName(),
-						T = TransmissionTorque,
-						RPM = EngineSimulator->GetRPM(),
-						Speed = EngineSimulator->GetSpeed(),
-						DynoSpeed = DynoSpeed,
-						Grounded = ThisInput.InContactWithGround
-					](FGameplayDebuggerCategory* GameplayDebugger)
-				{
-					GameplayDebugger->AddTextLine("hgello");
-
-					if (bHasEngine)
-					{
-						UE_LOG(LogTemp, Warning, TEXT("asdf"));
-
-						GameplayDebugger->AddTextLine(
-							FString::Printf(TEXT("{yellow}Engine: {white}%s"), *EngineName)
-						);
-						GameplayDebugger->AddTextLine(
-							FString::Printf(TEXT("\t{yellow}Torque at the wheel: {white}%f"), T)
-						);
-						GameplayDebugger->AddTextLine(
-							FString::Printf(TEXT("\t{yellow}RPM: {white}%f"), RPM)
-						);
-						GameplayDebugger->AddTextLine(
-							FString::Printf(TEXT("\t{yellow}Dyno RPM: {white}%f"), DynoSpeed)
-						);
-						if (!Grounded)
-						{
-							GameplayDebugger->AddTextLine("\t{green}Engine in air, dyno disabled");
-						}
-					}
-					else
-					{
-						GameplayDebugger->AddTextLine("{red}FAILED TO LOAD ENGINE");
-					}
-				};
-#endif
-
-				{
-					FScopeLock Lock(&OutputMutex);
-					Output.Torque = TransmissionTorque;
-					Output.RPM = EngineSimulator->GetRPM();
-					Output.Redline = EngineSimulator->GetRedLine();
-					Output.Horsepower = EngineSimulator->GetDynoPower();
-					Output.Name = EngineSimulator->GetName();
-					Output.CurrentGear = EngineSimulator->GetGear();
-					Output.NumGears = EngineSimulator->GetGearCount();
-					Output.FrameCounter = ThisInput.FrameCounter + 1;
-				}
-			}
+			Tick();
 		}
 	}
 
@@ -188,6 +100,105 @@ void FEngineSimulatorThread::Exit()
 void FEngineSimulatorThread::Trigger()
 {
 	Semaphore->Trigger();
+}
+
+void FEngineSimulatorThread::Tick()
+{
+	FEngineSimulatorInput ThisInput;
+	{
+		FScopeLock Lock(&InputMutex);
+		ThisInput = Input;
+	}
+
+	ThisInput.DeltaTime = FPlatformTime::Seconds() - LastSimulationTime;
+	LastSimulationTime = FPlatformTime::Seconds();
+
+	{
+		SCOPE_CYCLE_COUNTER(STAT_EngineSimulatorPlugin_UpdateSimulation);
+		float DynoSpeed = ThisInput.EngineRPM * (EngineSimulator->GetGearRatio() == 0.f ? 1000000.f : EngineSimulator->GetGearRatio());
+		EngineSimulator->SetDynoSpeed(DynoSpeed);
+		EngineSimulator->SetDynoEnabled(ThisInput.InContactWithGround);
+
+		TFunction<void(IEngineSimulatorInterface*)> SimulationUpdate;
+		while (UpdateQueue.Dequeue(SimulationUpdate))
+		{
+			SimulationUpdate(EngineSimulator.Get());
+		}
+
+		SET_FLOAT_STAT(STAT_EngineSimulatorInputDeltaTime, ThisInput.DeltaTime * 1000);
+		double ThisFrameTime = FPlatformTime::Seconds();
+
+		EngineSimulator->Simulate(ThisInput.DeltaTime);
+
+		double FrameTime = FPlatformTime::Seconds() - ThisFrameTime;
+		SET_FLOAT_STAT(STAT_EngineSimulatorFrame, FrameTime * 1000);
+
+		float TransmissionTorque = EngineSimulator->GetFilteredDynoTorque() * EngineSimulator->GetGearRatio();
+
+		FillOutDebugData(TransmissionTorque, DynoSpeed, ThisInput);
+
+		{
+			FScopeLock Lock(&OutputMutex);
+			Output.Torque = TransmissionTorque;
+			Output.RPM = EngineSimulator->GetRPM();
+			Output.Redline = EngineSimulator->GetRedLine();
+			Output.Horsepower = EngineSimulator->GetDynoPower();
+			Output.Name = EngineSimulator->GetName();
+			Output.CurrentGear = EngineSimulator->GetGear();
+			Output.NumGears = EngineSimulator->GetGearCount();
+			Output.FrameCounter = ThisInput.FrameCounter + 1;
+		}
+	}
+}
+
+void FEngineSimulatorThread::FillOutDebugData(float TransmissionTorque, float DynoSpeed, const FEngineSimulatorInput& ThisInput)
+{
+#if WITH_GAMEPLAY_DEBUGGER
+	GameplayDebuggerPrint = [
+		bHasEngine = EngineSimulator->HasEngine(),
+			EngineName = EngineSimulator->GetName(),
+			T = TransmissionTorque,
+			RPM = EngineSimulator->GetRPM(),
+			Speed = EngineSimulator->GetSpeed(),
+			DynoSpeed = DynoSpeed,
+			Grounded = ThisInput.InContactWithGround,
+			StarterEnabled = EngineSimulator->IsStarterEnabled(),
+			IgnitionEnabled = EngineSimulator->IsIgnitionEnabled()
+	](FGameplayDebuggerCategory* GameplayDebugger)
+	{
+		GameplayDebugger->AddTextLine("hgello");
+
+		if (bHasEngine)
+		{
+			GameplayDebugger->AddTextLine(
+				FString::Printf(TEXT("{yellow}Engine: {white}%s"), *EngineName)
+			);
+			GameplayDebugger->AddTextLine(
+				FString::Printf(TEXT("\t{yellow}Torque at the wheel: {white}%f"), T)
+			);
+			GameplayDebugger->AddTextLine(
+				FString::Printf(TEXT("\t{yellow}RPM: {white}%f"), RPM)
+			);
+			GameplayDebugger->AddTextLine(
+				FString::Printf(TEXT("\t{yellow}Dyno RPM: {white}%f"), DynoSpeed)
+			);
+			GameplayDebugger->AddTextLine(
+				FString::Printf(TEXT("\t{yellow}Starter Enabled: {white}%s"), StarterEnabled ? TEXT("true") : TEXT("false"))
+			);
+			GameplayDebugger->AddTextLine(
+				FString::Printf(TEXT("\t{yellow}Ignition Enabled: {white}%s"), IgnitionEnabled ? TEXT("true") : TEXT("false"))
+			);
+			if (!Grounded)
+			{
+				GameplayDebugger->AddTextLine("\t{green}Engine in air, dyno disabled");
+			}
+		}
+		else
+		{
+			GameplayDebugger->AddTextLine("{red}FAILED TO LOAD ENGINE");
+		}
+	};
+#endif
 }
 
 UEngineSimulatorWheeledVehicleSimulation::UEngineSimulatorWheeledVehicleSimulation(const FEngineSimulatorParameters& InParameters)

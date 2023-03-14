@@ -48,13 +48,12 @@ class ENGINESIMULATORPLUGIN_API UEngineSimulatorWheeledVehicleMovementComponent 
 	UFUNCTION(BlueprintCallable, Category = "Game|Components|EngineSimulatorVehicleMovement")
 		void RespawnEngine();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient, Category = "Engine Simulator Vehicle Movement")
-		USoundWaveProcedural* OutputEngineSound;
-
 	UPROPERTY(BlueprintReadOnly, Transient, Category = "Engine Simulator Vehicle Movement")
 		FEngineSimulatorOutput LastEngineSimulatorOutput;
 
 public:
+	/** Create and setup the Chaos vehicle */
+	virtual void CreateVehicle() override;
 	virtual TUniquePtr<Chaos::FSimpleWheeledVehicle> CreatePhysicsVehicle() override;
 
 	TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const;

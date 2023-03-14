@@ -75,6 +75,9 @@ public:
 	TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const { return EngineSimulator; }
 
 protected:
+	virtual void Tick();
+	virtual void FillOutDebugData(float TransmissionTorque, float DynoSpeed, const struct FEngineSimulatorInput& ThisInput);
+
 	TAtomic<bool> bStopRequested;
 
 	FCriticalSection InputMutex;
