@@ -4,20 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/SynthComponent.h"
-#include "DSP/Osc.h"
 #include "EngineSimulatorAudioComponent.generated.h"
-
-// ========================================================================
-// UEngineSimulatorAudioComponent
-// Synth component class which implements USynthComponent
-// This is a simple hello-world type example which generates a sine-wave
-// tone using a DSP oscillator class and implements a single function to set
-// the frequency. To enable example:
-// 1. Ensure "SignalProcessing" is added to project's .Build.cs in PrivateDependencyModuleNames
-// 2. Enable macro below that includes code utilizing SignalProcessing Oscilator
-// ========================================================================
-
-#define SYNTHCOMPONENT_EX_OSCILATOR_ENABLED 0
 
 class IEngineSimulatorInterface;
 class UEngineSimulatorWheeledVehicleMovementComponent;
