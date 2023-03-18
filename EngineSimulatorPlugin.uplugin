@@ -22,14 +22,6 @@
 			"PlatformAllowList": [
 				"Win64"
 			]
-		},
-		{
-			"Name": "EngineSimulatorPluginVisualization",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"PlatformAllowList": [
-				"Win64"
-			]
 		}
 	],
 	"Plugins": [
