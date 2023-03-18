@@ -4,6 +4,8 @@
 #include "EngineSimulatorAudioComponent.h"
 
 #include "EngineSimulatorWheeledVehicleMovementComponent.h"
+#include "Sound/AudioBus.h"
+#include "AudioMixerDevice.h"
 
 UEngineSimulatorAudioComponent::UEngineSimulatorAudioComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -13,6 +15,28 @@ UEngineSimulatorAudioComponent::UEngineSimulatorAudioComponent(const FObjectInit
 	bAutoActivate = true;
 
 	bAutomaticallySetEngineComponent = true;
+
+	bOutputToAudioBus = false;
+}
+
+void UEngineSimulatorAudioComponent::OnComponentCreated()
+{
+	Super::OnComponentCreated();
+
+	if (bOutputToAudioBus)
+	{
+		AudioBus = NewObject<UAudioBus>(this);
+		FSoundSourceBusSendInfo BusSendInfo;
+		BusSendInfo.AudioBus = AudioBus;
+		if (BusSends.Num() == 0)
+		{
+			BusSends.Add(BusSendInfo);
+		}
+		else
+		{
+			BusSends[0] = BusSendInfo;
+		}
+	}
 }
 
 bool UEngineSimulatorAudioComponent::Init(int32& InSampleRate)
@@ -25,6 +49,19 @@ bool UEngineSimulatorAudioComponent::Init(int32& InSampleRate)
 		if (VHMC)
 		{
 			EngineComponent = VHMC;
+		}
+	}
+
+	EngineSimulator = EngineComponent.IsValid() ? EngineComponent->GetEngineSimulator() : nullptr;
+
+	SetOutputToBusOnly(bOutputToAudioBus);
+	if (AudioBus)
+	{
+		if (Audio::FMixerDevice* MixerDevice = FAudioDeviceManager::GetAudioMixerDeviceFromWorldContext(this))
+		{
+			uint32 AudioBusId = AudioBus->GetUniqueID();
+			int32 AudioBusNumChannels = (int32)AudioBus->AudioBusChannels + 1;
+			MixerDevice->StartAudioBus(AudioBusId, AudioBusNumChannels, false);
 		}
 	}
 

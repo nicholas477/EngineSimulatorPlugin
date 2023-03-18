@@ -47,6 +47,9 @@ struct FEngineSimulatorOutput
 		int32 NumGears = 1;
 
 	uint64 FrameCounter = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+		double LastFrameTime = 0.f;
 };
 
 class FGameplayDebuggerCategory;

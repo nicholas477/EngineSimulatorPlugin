@@ -17,7 +17,7 @@ UEngineSimulatorWheeledVehicleMovementComponent::UEngineSimulatorWheeledVehicleM
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	SleepThreshold = 0; // Disable vehicle sleep. This is required
+	//SleepThreshold = 0; // Disable vehicle sleep. This is required
 }
 
 void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -27,6 +27,7 @@ void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaT
 	{
 		UEngineSimulatorWheeledVehicleSimulation* VS = ((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get());
 		LastEngineSimulatorOutput = VS->GetLastOutput();
+		UE_LOG(LogTemp, Warning, TEXT("Output! %lf"), LastEngineSimulatorOutput.LastFrameTime);
 
 		if (PVehicleOutput)
 		{
@@ -34,6 +35,8 @@ void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaT
 			PVehicleOutput->TargetGear = LastEngineSimulatorOutput.CurrentGear + 1;
 			PVehicleOutput->EngineRPM = LastEngineSimulatorOutput.RPM;
 		}
+
+		EngineSetup.MaxRPM = LastEngineSimulatorOutput.Redline;
 	}
 }
 
@@ -113,10 +116,10 @@ void UEngineSimulatorWheeledVehicleMovementComponent::CreateVehicle()
 	Super::CreateVehicle();
 
 	((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get())->AsyncUpdateSimulation([=](IEngineSimulatorInterface* EngineInterface)
-		{
-			EngineInterface->SetIgnitionEnabled(true);
-			EngineInterface->SetStarterEnabled(bStarterAutomaticallyEnabled);
-		});
+	{
+		EngineInterface->SetIgnitionEnabled(true);
+		EngineInterface->SetStarterEnabled(bStarterAutomaticallyEnabled);
+	});
 
 	bStarterEnabled = bStarterAutomaticallyEnabled;
 }

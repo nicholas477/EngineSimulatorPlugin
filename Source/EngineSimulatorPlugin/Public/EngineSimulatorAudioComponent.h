@@ -21,6 +21,7 @@
 
 class IEngineSimulatorInterface;
 class UEngineSimulatorWheeledVehicleMovementComponent;
+class UAudioBus;
 
 UCLASS(ClassGroup = "Engine Simulator", meta = (BlueprintSpawnableComponent))
 class ENGINESIMULATORPLUGIN_API UEngineSimulatorAudioComponent : public USynthComponent
@@ -29,6 +30,8 @@ class ENGINESIMULATORPLUGIN_API UEngineSimulatorAudioComponent : public USynthCo
 
 public:
 	UEngineSimulatorAudioComponent(const FObjectInitializer& ObjectInitializer);
+
+	virtual void OnComponentCreated() override;
 
 	// Called when synth is created
 	virtual bool Init(int32& InSampleRate) override;
@@ -45,6 +48,17 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Engine Simulator Audio Component", meta=(EditCondition="!bAutomaticallySetEngineComponent"))
 		TWeakObjectPtr<UEngineSimulatorWheeledVehicleMovementComponent> EngineComponent;
+
+	// Disables sound output, routes it through an audio bus instead for further processing.
+	// Use this if you want to apply metasound filters
+	//
+	// NOTE: This is currently not functional
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Engine Simulator Audio Component")
+		bool bOutputToAudioBus;
+
+	// Use this if you want to run the sound through metasounds
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Audio Component")
+		UAudioBus* AudioBus;
 
 	TSharedPtr<IEngineSimulatorInterface> EngineSimulator;
 };

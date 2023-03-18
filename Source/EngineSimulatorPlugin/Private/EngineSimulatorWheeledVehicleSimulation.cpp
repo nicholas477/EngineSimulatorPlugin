@@ -147,6 +147,7 @@ void FEngineSimulatorThread::Tick()
 			Output.CurrentGear = EngineSimulator->GetGear();
 			Output.NumGears = EngineSimulator->GetGearCount();
 			Output.FrameCounter = ThisInput.FrameCounter + 1;
+			Output.LastFrameTime = FPlatformTime::Seconds();
 		}
 	}
 }
@@ -317,8 +318,16 @@ void UEngineSimulatorWheeledVehicleSimulation::AsyncUpdateSimulation(TFunction<v
 
 FEngineSimulatorOutput UEngineSimulatorWheeledVehicleSimulation::GetLastOutput()
 {
-	FScopeLock Lock(&LastOutputMutex);
-	return LastOutput;
+	if (EngineSimulatorThread)
+	{
+		FScopeLock Lock(&EngineSimulatorThread->OutputMutex);
+		return EngineSimulatorThread->Output;
+	}
+	else
+	{
+		FScopeLock Lock(&LastOutputMutex);
+		return LastOutput;
+	}
 }
 
 void UEngineSimulatorWheeledVehicleSimulation::Reset(const FEngineSimulatorParameters& InParameters)

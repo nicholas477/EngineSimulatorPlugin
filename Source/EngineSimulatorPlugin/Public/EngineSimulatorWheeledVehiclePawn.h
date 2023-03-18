@@ -21,7 +21,7 @@ class AEngineSimulatorWheeledVehiclePawn : public APawn
 {
 	GENERATED_UCLASS_BODY()
 
-private:
+protected:
 	/**  The main skeletal mesh associated with this Vehicle */
 	UPROPERTY(Category = Vehicle, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		class USkeletalMeshComponent* Mesh;

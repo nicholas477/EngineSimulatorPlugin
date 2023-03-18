@@ -31,14 +31,21 @@ public:
     virtual ~FEngineSimulator();
 
     // IEngineSimulatorInterface
-    virtual void Simulate(float DeltaTime) override { process(DeltaTime); }
+    virtual void Simulate(float DeltaTime)
+    {
+        process(DeltaTime);
+    }
 
-    virtual void SetDynoEnabled(bool bEnabled) { m_dynoEnabled = bEnabled; }
+    virtual void SetDynoEnabled(bool bEnabled)
+    {
+        m_dynoEnabled = bEnabled;
+    }
 
     virtual void SetStarterEnabled(bool bEnabled)
     {
         m_simulator.m_starterMotor.m_enabled = bEnabled;
     }
+
     virtual void SetIgnitionEnabled(bool bEnabled)
     { 
         if (m_simulator.getEngine() && m_simulator.getEngine()->getIgnitionModule())
@@ -46,7 +53,11 @@ public:
             m_simulator.getEngine()->getIgnitionModule()->m_enabled = bEnabled;
         }
     }
-    virtual void SetDynoSpeed(float RPM) { m_dynoSpeed = units::rpm(RPM); };
+
+    virtual void SetDynoSpeed(float RPM)
+    {
+        m_dynoSpeed = units::rpm(RPM);
+    };
 
     virtual void SetSpeedControl(float SpeedControl)
     { 

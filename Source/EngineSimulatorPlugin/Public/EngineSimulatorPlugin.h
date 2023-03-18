@@ -13,7 +13,4 @@ public:
 	virtual void ShutdownModule() override;
 
 	static FString GetAssetDirectory();
-private:
-	/** Handle to the test dll we will load */
-	//void*	ExampleLibraryHandle;
 };
