@@ -4,7 +4,9 @@ This plugin integrates EngineSimulator into the Chaos Vehicle simulation. The pl
 
 # Usage
 
-This guide assumes that your project is using Chaos vehicles or the Vehicle Template.
+Currently this plugin only supports Unreal Engine 5.1+
+
+This guide also assumes that your project is using Chaos vehicles or the Vehicle Template.
 
 1. Download the plugin from the Releases page, put it into your project's plugin folder and enable it inside your project's plugin settings.
 2. Open your vehicle blueprint. Select your Chaos Vehicle Movement Component, and change the Component Class from `ChaosWheeledVehicleMovementComponent` to `EngineSimulatorWheeledVehicleMovementComponent`
