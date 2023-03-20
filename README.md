@@ -15,4 +15,6 @@ This guide also assumes that your project is using Chaos vehicles or the Vehicle
 4. Add in a Gear-Up and Gear-Down input binding, and call SetEngineSimChangeGearUp and SetEngineSimChangeGearDown
 ![gear_change](https://user-images.githubusercontent.com/8600772/226207860-61120a57-6a01-4a57-bf23-aa2049ff0b5c.png)
 
+To change the engine, edit [main.mr](Resources/assets/main.mr). All of the Engine Simulator config files are in the Resources folder.
+
 That is all you need to do to get started with this plugin. Extra data (such as RPM, HP, number of gears, engine name, etc) can be accessed through the `LastEngineSimulatorOutput` variable on the movement component.
