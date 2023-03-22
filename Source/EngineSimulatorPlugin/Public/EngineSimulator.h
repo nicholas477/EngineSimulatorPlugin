@@ -43,10 +43,9 @@ public:
 	virtual int32 GenerateAudio(float* OutAudio, int32 NumSamples) = 0;
 };
 
-struct FEngineSimulatorParameters
+struct ENGINESIMULATORPLUGIN_API FEngineSimulatorParameters
 {
-	bool bShowGUI = false;
 	class USoundWaveProcedural* SoundWaveOutput = nullptr;
 };
 
-TSharedPtr<IEngineSimulatorInterface> CreateEngine(const FEngineSimulatorParameters& Parameters);
+ENGINESIMULATORPLUGIN_API TSharedPtr<IEngineSimulatorInterface> CreateEngine(const FEngineSimulatorParameters& Parameters);

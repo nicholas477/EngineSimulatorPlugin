@@ -11,7 +11,7 @@ class UEngineSimulatorWheeledVehicleMovementComponent;
 class UAudioBus;
 
 UCLASS(ClassGroup = "Engine Simulator", meta = (BlueprintSpawnableComponent))
-class ENGINESIMULATORPLUGIN_API UEngineSimulatorAudioComponent : public USynthComponent
+class ENGINESIMULATORCHAOSVEHICLES_API UEngineSimulatorAudioComponent : public USynthComponent
 {
 	GENERATED_BODY()
 

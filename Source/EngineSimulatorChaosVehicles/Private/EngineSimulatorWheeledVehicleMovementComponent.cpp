@@ -27,7 +27,6 @@ void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaT
 	{
 		UEngineSimulatorWheeledVehicleSimulation* VS = ((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get());
 		LastEngineSimulatorOutput = VS->GetLastOutput();
-		UE_LOG(LogTemp, Warning, TEXT("Output! %lf"), LastEngineSimulatorOutput.LastFrameTime);
 
 		if (PVehicleOutput)
 		{
@@ -70,7 +69,6 @@ void UEngineSimulatorWheeledVehicleMovementComponent::SetEngineSimChangeGearDown
 void UEngineSimulatorWheeledVehicleMovementComponent::RespawnEngine()
 {
 	FEngineSimulatorParameters EngineParameters;
-	EngineParameters.bShowGUI = false;
 
 	// Make the Vehicle Simulation class that will be updated from the physics thread async callback
 	((UEngineSimulatorWheeledVehicleSimulation*)VehicleSimulationPT.Get())->Reset(EngineParameters);
@@ -127,7 +125,6 @@ void UEngineSimulatorWheeledVehicleMovementComponent::CreateVehicle()
 TUniquePtr<Chaos::FSimpleWheeledVehicle> UEngineSimulatorWheeledVehicleMovementComponent::CreatePhysicsVehicle()
 {
 	FEngineSimulatorParameters EngineParameters;
-	EngineParameters.bShowGUI = false;
 
 	// Make the Vehicle Simulation class that will be updated from the physics thread async callback
 	VehicleSimulationPT = MakeUnique<UEngineSimulatorWheeledVehicleSimulation>(EngineParameters);

@@ -6,7 +6,6 @@
 
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
-#include "EngineSimulatorWheeledVehicleMovementComponent.h"
 
 FGameplayDebuggerCategory_EngineSimulator::FGameplayDebuggerCategory_EngineSimulator()
 {
@@ -16,15 +15,6 @@ void FGameplayDebuggerCategory_EngineSimulator::CollectData(APlayerController* O
 {
     if (this == nullptr)
         return;
-
-    if (APawn* DebugActorPawn = OwnerPC->GetPawn())
-    {
-        using ESWHMC = UEngineSimulatorWheeledVehicleMovementComponent;
-        if (auto* MovementComponent = Cast<ESWHMC>(DebugActorPawn->GetComponentByClass(ESWHMC::StaticClass())))
-        {
-            MovementComponent->DescribeSelfToGameplayDebugger(this);
-        }
-    }
 }
 
 TSharedRef<FGameplayDebuggerCategory> FGameplayDebuggerCategory_EngineSimulator::MakeInstance()

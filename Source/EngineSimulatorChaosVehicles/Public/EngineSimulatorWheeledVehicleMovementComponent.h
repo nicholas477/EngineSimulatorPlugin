@@ -12,7 +12,7 @@ class USoundWave;
 class USoundWaveProcedural;
 
 UCLASS(ClassGroup = "Engine Simulator", meta = (BlueprintSpawnableComponent))
-class ENGINESIMULATORPLUGIN_API UEngineSimulatorWheeledVehicleMovementComponent : public UChaosWheeledVehicleMovementComponent
+class ENGINESIMULATORCHAOSVEHICLES_API UEngineSimulatorWheeledVehicleMovementComponent : public UChaosWheeledVehicleMovementComponent
 {
 	GENERATED_UCLASS_BODY()
 

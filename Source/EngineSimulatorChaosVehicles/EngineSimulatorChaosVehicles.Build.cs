@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class EngineSimulatorPlugin : ModuleRules
+public class EngineSimulatorChaosVehicles : ModuleRules
 {
-	public EngineSimulatorPlugin(ReadOnlyTargetRules Target) : base(Target)
+	public EngineSimulatorChaosVehicles(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;			
 		
@@ -16,8 +16,8 @@ public class EngineSimulatorPlugin : ModuleRules
 				"Engine",
                 "Projects",
                 "ChaosVehicles",
-                "AudioMixer",
-                "EngineSim"
+				"EngineSimulatorPlugin",
+                "AudioMixer"
             }
 		);
 
