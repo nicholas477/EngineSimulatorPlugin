@@ -16,8 +16,6 @@ UEngineSimulatorWheeledVehicleMovementComponent::UEngineSimulatorWheeledVehicleM
 	: Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
-	//SleepThreshold = 0; // Disable vehicle sleep. This is required
 }
 
 void UEngineSimulatorWheeledVehicleMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
