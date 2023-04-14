@@ -1,3 +1,4 @@
+[![Discord](https://img.shields.io/discord/1028718524182577283?label=Discord%20)](https://discord.gg/GGthsd4NRy)
 # EngineSimulatorPlugin
 
 This plugin integrates EngineSimulator into the Chaos Vehicle simulation. The plugin provides a vehicle movement component that subclasses `UChaosWheeledVehicleMovementComponent`, and as such it is a drop-in replacement for Unreal's vehicle movement.
