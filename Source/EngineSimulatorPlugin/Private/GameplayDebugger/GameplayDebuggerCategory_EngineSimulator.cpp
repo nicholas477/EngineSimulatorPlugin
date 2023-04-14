@@ -6,6 +6,7 @@
 
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
 
 #include "EngineSimulatorComponent.h"
 

@@ -114,6 +114,7 @@ void FEngineSimulatorThread::Trigger()
 	Semaphore->Trigger();
 }
 
+#if WITH_GAMEPLAY_DEBUGGER
 void FEngineSimulatorThread::PrintGameplayDebuggerInfo(FGameplayDebuggerCategory* GameplayDebugger)
 {
 	if (GameplayDebuggerPrint)
@@ -121,6 +122,7 @@ void FEngineSimulatorThread::PrintGameplayDebuggerInfo(FGameplayDebuggerCategory
 		GameplayDebuggerPrint(GameplayDebugger);
 	}
 }
+#endif
 
 void FEngineSimulatorThread::Tick()
 {

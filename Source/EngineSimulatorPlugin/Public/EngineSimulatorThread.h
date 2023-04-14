@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "HAL/Runnable.h"
+#include "HAL/RunnableThread.h"
 #include "EngineSimulator.h"
 #include "EngineSimulatorThread.generated.h"
 
@@ -70,7 +71,6 @@ public:
 	FEngineSimulatorOutput GetEngineOutput();
 
 	void Trigger();
-	void PrintGameplayDebuggerInfo(FGameplayDebuggerCategory* GameplayDebugger);
 
 	TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const { return EngineSimulator; }
 
@@ -110,5 +110,8 @@ protected:
 
 #if WITH_GAMEPLAY_DEBUGGER
 	TFunction<void(FGameplayDebuggerCategory*)> GameplayDebuggerPrint;
+
+public:
+	void PrintGameplayDebuggerInfo(FGameplayDebuggerCategory* GameplayDebugger);
 #endif
 };
