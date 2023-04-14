@@ -6,7 +6,8 @@ public class EngineSimulatorPlugin : ModuleRules
 {
 	public EngineSimulatorPlugin(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;			
+        bUseUnity = false;
+        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;			
 		
 		PublicDependencyModuleNames.AddRange(
 			new string[]

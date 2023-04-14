@@ -3,7 +3,8 @@
 
 #include "EngineSimulatorAudioComponent.h"
 
-#include "EngineSimulatorWheeledVehicleMovementComponent.h"
+#include "EngineSimulator.h"
+#include "EngineSimulatorEngineInterface.h"
 #include "Sound/AudioBus.h"
 #include "AudioMixerDevice.h"
 
@@ -45,14 +46,14 @@ bool UEngineSimulatorAudioComponent::Init(int32& InSampleRate)
 
 	if (bAutomaticallySetEngineComponent)
 	{
-		auto* VHMC = Cast<UEngineSimulatorWheeledVehicleMovementComponent>(GetOwner()->GetComponentByClass(UEngineSimulatorWheeledVehicleMovementComponent::StaticClass()));
-		if (VHMC)
+		TArray<UActorComponent*> EngineComponents = GetOwner()->GetComponentsByInterface(UEngineSimulatorEngineInterface::StaticClass());
+		if (EngineComponents.Num() > 0)
 		{
-			EngineComponent = VHMC;
+			EngineComponent = EngineComponents[0];
 		}
 	}
 
-	EngineSimulator = EngineComponent.IsValid() ? EngineComponent->GetEngineSimulator() : nullptr;
+	EngineSimulator = EngineComponent != nullptr ? EngineComponent->GetEngineSimulator() : nullptr;
 
 	SetOutputToBusOnly(bOutputToAudioBus);
 	if (AudioBus)
@@ -91,5 +92,5 @@ void UEngineSimulatorAudioComponent::TickComponent(float DeltaTime, ELevelTick T
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	EngineSimulator = EngineComponent.IsValid() ? EngineComponent->GetEngineSimulator() : nullptr;
+	EngineSimulator = EngineComponent != nullptr ? EngineComponent->GetEngineSimulator() : nullptr;
 }

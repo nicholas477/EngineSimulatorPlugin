@@ -16,8 +16,7 @@ public class EngineSimulatorChaosVehicles : ModuleRules
 				"Engine",
                 "Projects",
                 "ChaosVehicles",
-				"EngineSimulatorPlugin",
-                "AudioMixer"
+				"EngineSimulatorPlugin"
             }
 		);
 

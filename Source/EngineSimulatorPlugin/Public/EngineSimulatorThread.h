@@ -15,14 +15,16 @@ struct ENGINESIMULATORPLUGIN_API FEngineSimulatorInput
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Input")
+	// Currently not used
+	UPROPERTY()
 		float DeltaTime = 1.0f / 60.f;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Input")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Engine Simulator Input")
 		float EngineRPM = 0.f;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Input")
-		bool InContactWithGround = true;
+	// When enabled, then the engine RPM is being set from the input, and torque is being read out from the engine
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Engine Simulator Input")
+		bool bDynoEnabled = true;
 };
 
 USTRUCT(BlueprintType)
@@ -30,30 +32,30 @@ struct ENGINESIMULATORPLUGIN_API FEngineSimulatorOutput
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		float Torque = 0; // Newtons per meter
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		float RPM = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		float Redline = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		float Horsepower = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		FString Name;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		int32 CurrentGear = -1;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		int32 NumGears = 1;
 
 	uint64 FrameCounter = 0;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Engine Simulator Output")
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Engine Simulator Output")
 		double LastFrameTime = 0.f;
 };
 
@@ -85,6 +87,8 @@ protected:
 	virtual void FillOutDebugData(float TransmissionTorque, float DynoSpeed, const struct FEngineSimulatorInput& ThisInput);
 
 	FString GetThreadName();
+
+	void UpdateEngineOutput(const FEngineSimulatorOutput& InOutput);
 
 	TAtomic<bool> bStopRequested;
 

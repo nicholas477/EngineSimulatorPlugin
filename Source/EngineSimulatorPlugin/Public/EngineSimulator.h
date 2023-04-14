@@ -21,7 +21,6 @@ public:
 	virtual void SetDynoSpeed(float RPM) = 0;
 	virtual void SetGear(int32 Gear) = 0;
 	virtual void SetClutchPressure(float Pressure) = 0;
-	//virtual void SetClutch(float Clutch) = 0;
 	virtual int32 GetGear() = 0;
 	virtual float GetSpeed() = 0;
 	virtual float GetRPM() = 0;
@@ -45,7 +44,7 @@ public:
 
 struct ENGINESIMULATORPLUGIN_API FEngineSimulatorParameters
 {
-	class USoundWaveProcedural* SoundWaveOutput = nullptr;
+	// This is empty for now. All of the parameters are read from the engine simulator config files
 };
 
 ENGINESIMULATORPLUGIN_API TSharedPtr<IEngineSimulatorInterface> CreateEngine(const FEngineSimulatorParameters& Parameters);

@@ -137,7 +137,7 @@ void FEngineSimulatorThread::Tick()
 		SCOPE_CYCLE_COUNTER(STAT_EngineSimulatorPlugin_UpdateSimulation);
 		float DynoSpeed = ThisInput.EngineRPM * (EngineSimulator->GetGearRatio() == 0.f ? 1000000.f : EngineSimulator->GetGearRatio());
 		EngineSimulator->SetDynoSpeed(DynoSpeed);
-		EngineSimulator->SetDynoEnabled(ThisInput.InContactWithGround);
+		EngineSimulator->SetDynoEnabled(ThisInput.bDynoEnabled);
 
 		TFunction<void(IEngineSimulatorInterface*)> SimulationUpdate;
 		while (UpdateQueue.Dequeue(SimulationUpdate))
@@ -157,18 +157,16 @@ void FEngineSimulatorThread::Tick()
 
 		FillOutDebugData(TransmissionTorque, DynoSpeed, ThisInput);
 
-		{
-			FScopeLock Lock(&OutputMutex);
-			Output.Torque = TransmissionTorque;
-			Output.RPM = EngineSimulator->GetRPM();
-			Output.Redline = EngineSimulator->GetRedLine();
-			Output.Horsepower = EngineSimulator->GetDynoPower();
-			Output.Name = EngineSimulator->GetName();
-			Output.CurrentGear = EngineSimulator->GetGear();
-			Output.NumGears = EngineSimulator->GetGearCount();
-			Output.FrameCounter++;
-			Output.LastFrameTime = FPlatformTime::Seconds();
-		}
+		FEngineSimulatorOutput NewOutput;
+		NewOutput.Torque = TransmissionTorque;
+		NewOutput.RPM = EngineSimulator->GetRPM();
+		NewOutput.Redline = EngineSimulator->GetRedLine();
+		NewOutput.Horsepower = EngineSimulator->GetDynoPower();
+		NewOutput.Name = EngineSimulator->GetName();
+		NewOutput.CurrentGear = EngineSimulator->GetGear();
+		NewOutput.NumGears = EngineSimulator->GetGearCount();
+		NewOutput.LastFrameTime = FPlatformTime::Seconds();
+		UpdateEngineOutput(NewOutput);
 	}
 }
 
@@ -177,14 +175,14 @@ void FEngineSimulatorThread::FillOutDebugData(float TransmissionTorque, float Dy
 #if WITH_GAMEPLAY_DEBUGGER
 	GameplayDebuggerPrint = [
 		bHasEngine = EngineSimulator->HasEngine(),
-			EngineName = EngineSimulator->GetName(),
-			T = TransmissionTorque,
-			RPM = EngineSimulator->GetRPM(),
-			Speed = EngineSimulator->GetSpeed(),
-			DynoSpeed = DynoSpeed,
-			Grounded = ThisInput.InContactWithGround,
-			StarterEnabled = EngineSimulator->IsStarterEnabled(),
-			IgnitionEnabled = EngineSimulator->IsIgnitionEnabled()
+		EngineName = EngineSimulator->GetName(),
+		T = TransmissionTorque,
+		RPM = EngineSimulator->GetRPM(),
+		Speed = EngineSimulator->GetSpeed(),
+		DynoSpeed = DynoSpeed,
+		Grounded = ThisInput.bDynoEnabled,
+		StarterEnabled = EngineSimulator->IsStarterEnabled(),
+		IgnitionEnabled = EngineSimulator->IsIgnitionEnabled()
 	](FGameplayDebuggerCategory* GameplayDebugger)
 	{
 		GameplayDebugger->AddTextLine("hgello");
@@ -226,4 +224,12 @@ FString FEngineSimulatorThread::GetThreadName()
 {
 	static int32 ThreadNum = 0;
 	return FString::Printf(TEXT("Engine Simulator Thread %d"), ThreadNum++);
+}
+
+void FEngineSimulatorThread::UpdateEngineOutput(const FEngineSimulatorOutput& InOutput)
+{
+	FScopeLock Lock(&OutputMutex);
+	uint64 LastFrameNumber = Output.FrameCounter;
+	Output = InOutput;
+	Output.FrameCounter = LastFrameNumber + 1;
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
+#include "EngineSimulatorEngineInterface.h"
 #include "EngineSimulatorWheeledVehicleSimulation.h"
 #include "EngineSimulatorWheeledVehicleMovementComponent.generated.h"
 
@@ -12,7 +13,7 @@ class USoundWave;
 class USoundWaveProcedural;
 
 UCLASS(ClassGroup = "Engine Simulator", meta = (BlueprintSpawnableComponent))
-class ENGINESIMULATORCHAOSVEHICLES_API UEngineSimulatorWheeledVehicleMovementComponent : public UChaosWheeledVehicleMovementComponent
+class ENGINESIMULATORCHAOSVEHICLES_API UEngineSimulatorWheeledVehicleMovementComponent : public UChaosWheeledVehicleMovementComponent, public IEngineSimulatorEngineInterface
 {
 	GENERATED_UCLASS_BODY()
 
@@ -56,7 +57,7 @@ public:
 	virtual void CreateVehicle() override;
 	virtual TUniquePtr<Chaos::FSimpleWheeledVehicle> CreatePhysicsVehicle() override;
 
-	TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const;
+	virtual TSharedPtr<IEngineSimulatorInterface> GetEngineSimulator() const override;
 
 	// Get output data from Physics Thread
 	virtual void ParallelUpdate(float DeltaSeconds);

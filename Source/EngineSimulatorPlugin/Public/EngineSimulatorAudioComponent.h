@@ -6,12 +6,12 @@
 #include "Components/SynthComponent.h"
 #include "EngineSimulatorAudioComponent.generated.h"
 
+class IEngineSimulatorEngineInterface;
 class IEngineSimulatorInterface;
-class UEngineSimulatorWheeledVehicleMovementComponent;
 class UAudioBus;
 
 UCLASS(ClassGroup = "Engine Simulator", meta = (BlueprintSpawnableComponent))
-class ENGINESIMULATORCHAOSVEHICLES_API UEngineSimulatorAudioComponent : public USynthComponent
+class ENGINESIMULATORPLUGIN_API UEngineSimulatorAudioComponent : public USynthComponent
 {
 	GENERATED_BODY()
 
@@ -34,7 +34,7 @@ protected:
 		bool bAutomaticallySetEngineComponent;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Engine Simulator Audio Component", meta=(EditCondition="!bAutomaticallySetEngineComponent"))
-		TWeakObjectPtr<UEngineSimulatorWheeledVehicleMovementComponent> EngineComponent;
+		TScriptInterface<IEngineSimulatorEngineInterface> EngineComponent;
 
 	// Disables sound output, routes it through an audio bus instead for further processing.
 	// Use this if you want to apply metasound filters

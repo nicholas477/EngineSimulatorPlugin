@@ -7,6 +7,8 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 
+#include "EngineSimulatorComponent.h"
+
 FGameplayDebuggerCategory_EngineSimulator::FGameplayDebuggerCategory_EngineSimulator()
 {
 }
@@ -15,6 +17,14 @@ void FGameplayDebuggerCategory_EngineSimulator::CollectData(APlayerController* O
 {
     if (this == nullptr)
         return;
+
+    if (APawn* DebugActorPawn = OwnerPC->GetPawn())
+    {
+        if (auto* EngineSimulator = Cast<UEngineSimulatorComponent>(DebugActorPawn->GetComponentByClass(UEngineSimulatorComponent::StaticClass())))
+        {
+            EngineSimulator->DescribeSelfToGameplayDebugger(this);
+        }
+    }
 }
 
 TSharedRef<FGameplayDebuggerCategory> FGameplayDebuggerCategory_EngineSimulator::MakeInstance()

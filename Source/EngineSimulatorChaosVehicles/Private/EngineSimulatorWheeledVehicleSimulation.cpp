@@ -58,7 +58,7 @@ void UEngineSimulatorWheeledVehicleSimulation::ProcessMechanicalSimulation(float
 
 		FEngineSimulatorInput NextInput;
 		NextInput.DeltaTime = DeltaTime;
-		NextInput.InContactWithGround = bWheelsInContact;
+		NextInput.bDynoEnabled = bWheelsInContact;
 		NextInput.EngineRPM = DynoSpeed;
 		EngineSimulatorThread->SetEngineInput(NextInput);
 

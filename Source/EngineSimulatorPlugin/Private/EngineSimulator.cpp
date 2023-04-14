@@ -304,7 +304,7 @@ void FEngineSimulator::loadScript()
 
 void FEngineSimulator::loadEngine(Engine* engine, Vehicle* vehicle, Transmission* transmission)
 {
-    UE_LOG(LogTemp, Warning, TEXT("void UEngineSimulator::loadEngine()"));
+    UE_LOG(LogTemp, Warning, TEXT("void FEngineSimulator::loadEngine()"));
 
     if (m_vehicle != nullptr) {
         delete m_vehicle;
