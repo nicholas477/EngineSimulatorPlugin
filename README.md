@@ -19,3 +19,12 @@ This guide also assumes that your project is using Chaos vehicles or the Vehicle
 To change the engine, edit [main.mr](Resources/assets/main.mr). All of the Engine Simulator config files are in the Resources folder.
 
 That is all you need to do to get started with this plugin. Extra data (such as RPM, HP, number of gears, engine name, etc) can be accessed through the `LastEngineSimulatorOutput` variable on the movement component.
+
+## Changing engine sounds in-game
+You can change the Engine Sounds by overwriting the `main.mr` file. For illustration purpose I will show an example how to do this. 
+
+I use the [File Helper Blueprint Library](https://www.unrealengine.com/marketplace/en-US/product/file-helper-bp-library) from Unreal Marketplace. 
+
+![image](https://github.com/1NoobDev/EngineSimulatorPlugin/assets/20015201/ba59d3a4-2c43-4f80-885c-f00d20a8cde8)
+
+The `File` is a local variable with the path to the main.mr file. It's also working when the project is build, just make sure to adjust the path of main.mr from plugin/resources towards the build path. 
